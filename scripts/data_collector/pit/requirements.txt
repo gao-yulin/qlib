@@ -2,7 +2,7 @@ loguru
 fire
 tqdm
 requests
-pandas
+pandas==1.5.3
 lxml
 loguru
 baostock

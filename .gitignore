@@ -4,11 +4,11 @@ __pycache__/
 *.pyc
 *.pyd
 *.so
-*.ipynb
 .ipynb_checkpoints
 _build
 build/
 dist/
+data/
 
 *.pkl
 *.hd5

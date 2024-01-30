@@ -392,7 +392,7 @@ class YahooNormalize(BaseNormalize):
         columns = copy.deepcopy(YahooNormalize.COLUMNS)
         df = df.copy()
         df.set_index(date_field_name, inplace=True)
-        df.index = pd.to_datetime(df.index)
+        df.index = pd.to_datetime(df.index, utc=True)
         df.index = df.index.tz_localize(None)
         df = df[~df.index.duplicated(keep="first")]
         if calendar_list is not None:

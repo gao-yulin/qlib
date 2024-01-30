@@ -56,9 +56,13 @@ class LocalformerModel(Model):
         self.optimizer = optimizer.lower()
         self.loss = loss
         self.n_jobs = n_jobs
-        self.device = torch.device("cuda:%d" % GPU if torch.cuda.is_available() and GPU >= 0 else "cpu")
         self.seed = seed
         self.logger = get_module_logger("TransformerModel")
+        if torch.backends.mps.is_available():
+            self.device = torch.device("mps" if GPU >= 0 else "cpu")
+            self.logger.info(
+                "Enabling MPS Acceleration."
+            )
         self.logger.info(
             "Improved Transformer:" "\nbatch_size : {}" "\ndevice : {}".format(self.batch_size, self.device)
         )
@@ -106,8 +110,8 @@ class LocalformerModel(Model):
         self.model.train()
 
         for data in data_loader:
-            feature = data[:, :, 0:-1].to(self.device)
-            label = data[:, -1, -1].to(self.device)
+            feature = data[:, :, 0:-1].to(self.device, dtype=torch.float32)
+            label = data[:, -1, -1].to(self.device, dtype=torch.float32)
 
             pred = self.model(feature.float())  # .float()
             loss = self.loss_fn(pred, label)
@@ -124,8 +128,8 @@ class LocalformerModel(Model):
         losses = []
 
         for data in data_loader:
-            feature = data[:, :, 0:-1].to(self.device)
-            label = data[:, -1, -1].to(self.device)
+            feature = data[:, :, 0:-1].to(self.device, dtype=torch.float32)
+            label = data[:, -1, -1].to(self.device, dtype=torch.float32)
 
             with torch.no_grad():
                 pred = self.model(feature.float())  # .float()
@@ -211,7 +215,7 @@ class LocalformerModel(Model):
         preds = []
 
         for data in test_loader:
-            feature = data[:, :, 0:-1].to(self.device)
+            feature = data[:, :, 0:-1].to(self.device, dtype=torch.float32)
 
             with torch.no_grad():
                 pred = self.model(feature.float()).detach().cpu().numpy()

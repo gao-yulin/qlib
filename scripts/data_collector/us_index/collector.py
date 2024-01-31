@@ -95,6 +95,7 @@ class WIKIIndex(IndexBase):
             inst_df[self.END_DATE_FIELD] = inst_df[self.END_DATE_FIELD].apply(
                 lambda x: (pd.Timestamp(x) + pd.Timedelta(hours=23, minutes=59)).strftime("%Y-%m-%d %H:%M:%S")
             )
+        inst_df[self.END_DATE_FIELD] = inst_df[self.END_DATE_FIELD].dt.date
         return inst_df
 
     @property
@@ -107,7 +108,7 @@ class WIKIIndex(IndexBase):
         """
         _calendar_list = getattr(self, "_calendar_list", None)
         if _calendar_list is None:
-            _calendar_list = list(filter(lambda x: x >= self.bench_start_date, get_calendar_list("US_ALL")))
+            _calendar_list = list(filter(lambda x: x >= self.bench_start_date, [ x.tz_localize(None) for x in get_calendar_list("US_ALL")]))
             setattr(self, "_calendar_list", _calendar_list)
         return _calendar_list
 

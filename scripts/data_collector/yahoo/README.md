@@ -85,9 +85,9 @@ pip install -r requirements.txt
           python collector.py download_data --source_dir ~/.qlib/stock_data/source/cn_data_1min --delay 1 --interval 1min --region CN
 
           # us 1d data
-          python collector.py download_data --source_dir ~/.qlib/stock_data/source/us_data --start 2020-01-01 --end 2020-12-31 --delay 1 --interval 1d --region US
+          python collector.py download_data --source_dir ~/qlib/data/source/us_data --start 2016-01-01 --end 2023-12-31 --delay 0.1 --interval 1d --region US --max_workers 16
           # us 1min data
-          python collector.py download_data --source_dir ~/.qlib/stock_data/source/us_data_1min --delay 1 --interval 1min --region US
+          python collector.py download_data --source_dir ~/qlib/data/source/us_data_1min --delay 1 --interval 1min --region US
 
           # in 1d data
           python collector.py download_data --source_dir ~/.qlib/stock_data/source/in_data --start 2020-01-01 --end 2020-12-31 --delay 1 --interval 1d --region IN
@@ -131,6 +131,9 @@ pip install -r requirements.txt
         # normalize 1d cn
         python collector.py normalize_data --source_dir ~/.qlib/stock_data/source/cn_data --normalize_dir ~/.qlib/stock_data/source/cn_1d_nor --region CN --interval 1d
 
+        # normalize 1d us
+        python collector.py normalize_data --source_dir ~/qlib/data/source/us_data --normalize_dir ~/qlib/data/source/us_1d_norm --region US --interval 1d --max_workers 16
+
         # normalize 1min cn
         python collector.py normalize_data --qlib_data_1d_dir ~/.qlib/qlib_data/cn_data --source_dir ~/.qlib/stock_data/source/cn_data_1min --normalize_dir ~/.qlib/stock_data/source/cn_1min_nor --region CN --interval 1min
 
@@ -161,6 +164,8 @@ pip install -r requirements.txt
        python dump_bin.py dump_all --csv_path ~/.qlib/stock_data/source/cn_1d_nor --qlib_dir ~/.qlib/qlib_data/cn_data --freq day --exclude_fields date,symbol
        # dump 1min cn
        python dump_bin.py dump_all --csv_path ~/.qlib/stock_data/source/cn_1min_nor --qlib_dir ~/.qlib/qlib_data/cn_data_1min --freq 1min --exclude_fields date,symbol
+       # dump 1d us
+       python dump_bin.py dump_all --csv_path ~/qlib/data/source/us_1d_norm --qlib_dir ~/qlib/data/us_data --freq day --exclude_fields date,symbol
        ```
 
 ### Automatic update of daily frequency data(from yahoo finance)

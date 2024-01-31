@@ -58,10 +58,10 @@ class LocalformerModel(Model):
         self.n_jobs = n_jobs
         self.seed = seed
         self.logger = get_module_logger("TransformerModel")
-        if torch.backends.mps.is_available():
-            self.device = torch.device("mps" if GPU >= 0 else "cpu")
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda" if GPU > 0 else "cpu")
             self.logger.info(
-                "Enabling MPS Acceleration."
+                "Enabling cuda Acceleration."
             )
         self.logger.info(
             "Improved Transformer:" "\nbatch_size : {}" "\ndevice : {}".format(self.batch_size, self.device)
@@ -87,7 +87,7 @@ class LocalformerModel(Model):
         return self.device != torch.device("cpu")
 
     def mse(self, pred, label):
-        loss = (pred.float() - label.float()) ** 2
+        loss = (pred - label) ** 2
         return torch.mean(loss)
 
     def loss_fn(self, pred, label):
@@ -110,10 +110,10 @@ class LocalformerModel(Model):
         self.model.train()
 
         for data in data_loader:
-            feature = data[:, :, 0:-1].to(self.device, dtype=torch.float32)
-            label = data[:, -1, -1].to(self.device, dtype=torch.float32)
-
-            pred = self.model(feature.float())  # .float()
+            feature = data[:, :, 0:-1].to(self.device)
+            label = data[:, -1, -1].to(self.device)
+            
+            pred = self.model(feature)
             loss = self.loss_fn(pred, label)
 
             self.train_optimizer.zero_grad()
@@ -128,11 +128,11 @@ class LocalformerModel(Model):
         losses = []
 
         for data in data_loader:
-            feature = data[:, :, 0:-1].to(self.device, dtype=torch.float32)
-            label = data[:, -1, -1].to(self.device, dtype=torch.float32)
+            feature = data[:, :, 0:-1].to(self.device)
+            label = data[:, -1, -1].to(self.device)
 
             with torch.no_grad():
-                pred = self.model(feature.float())  # .float()
+                pred = self.model(feature)
                 loss = self.loss_fn(pred, label)
                 losses.append(loss.item())
 
@@ -147,8 +147,8 @@ class LocalformerModel(Model):
         evals_result=dict(),
         save_path=None,
     ):
-        dl_train = dataset.prepare("train", col_set=["feature", "label"], data_key=DataHandlerLP.DK_L)
-        dl_valid = dataset.prepare("valid", col_set=["feature", "label"], data_key=DataHandlerLP.DK_L)
+        dl_train = dataset.prepare("train", col_set=["feature", "label"], data_key=DataHandlerLP.DK_L, dtype=np.float32)
+        dl_valid = dataset.prepare("valid", col_set=["feature", "label"], data_key=DataHandlerLP.DK_L, dtype=np.float32)
         if dl_train.empty or dl_valid.empty:
             raise ValueError("Empty data from dataset, please check your dataset config.")
 
@@ -208,17 +208,17 @@ class LocalformerModel(Model):
         if not self.fitted:
             raise ValueError("model is not fitted yet!")
 
-        dl_test = dataset.prepare("test", col_set=["feature", "label"], data_key=DataHandlerLP.DK_I)
+        dl_test = dataset.prepare("test", col_set=["feature", "label"], data_key=DataHandlerLP.DK_I, dtype=np.float32)
         dl_test.config(fillna_type="ffill+bfill")
         test_loader = DataLoader(dl_test, batch_size=self.batch_size, num_workers=self.n_jobs)
         self.model.eval()
         preds = []
 
         for data in test_loader:
-            feature = data[:, :, 0:-1].to(self.device, dtype=torch.float32)
+            feature = data[:, :, 0:-1].to(self.device)
 
             with torch.no_grad():
-                pred = self.model(feature.float()).detach().cpu().numpy()
+                pred = self.model(feature).detach().cpu().numpy()
 
             preds.append(pred)
 

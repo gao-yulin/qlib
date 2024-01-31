@@ -10,7 +10,7 @@ pip install -r requirements.txt
 
 ```bash
 # parse instruments, using in qlib/instruments.
-python collector.py --index_name SP500 --qlib_dir ~/.qlib/qlib_data/us_data --method parse_instruments
+python collector.py --index_name SP500 --qlib_dir ~/qlib/data/us_data --method parse_instruments
 
 # parse new companies
 python collector.py --index_name SP500 --qlib_dir ~/.qlib/qlib_data/us_data --method save_new_companies

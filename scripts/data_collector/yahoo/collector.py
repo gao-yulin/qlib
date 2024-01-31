@@ -397,7 +397,7 @@ class YahooNormalize(BaseNormalize):
         df = df[~df.index.duplicated(keep="first")]
         if calendar_list is not None:
             df = df.reindex(
-                pd.DataFrame(index=calendar_list)
+                pd.DataFrame(index=pd.to_datetime(calendar_list, utc=True).tz_localize(None))
                 .loc[
                     pd.Timestamp(df.index.min()).date() : pd.Timestamp(df.index.max()).date()
                     + pd.Timedelta(hours=23, minutes=59)

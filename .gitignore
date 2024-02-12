@@ -9,6 +9,7 @@ _build
 build/
 dist/
 data/
+strategy/
 
 *.pkl
 *.hd5

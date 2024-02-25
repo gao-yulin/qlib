@@ -5,6 +5,7 @@
 import sys
 import copy
 import fire
+import abc
 import numpy as np
 import pandas as pd
 import baostock as bs
@@ -12,6 +13,8 @@ from tqdm import tqdm
 from pathlib import Path
 from loguru import logger
 from typing import Iterable, List
+
+from typing import Union
 
 import qlib
 from qlib.data import D
@@ -22,11 +25,10 @@ sys.path.append(str(CUR_DIR.parent.parent))
 from data_collector.base import BaseCollector, BaseNormalize, BaseRun
 from data_collector.utils import generate_minutes_calendar_from_daily, calc_adjusted_price
 
-
-class BaostockCollectorHS3005min(BaseCollector):
+class BaostockCollector(BaseCollector, abc.ABC):
     def __init__(
         self,
-        save_dir: [str, Path],
+        save_dir: Union[str, Path],
         start=None,
         end=None,
         interval="5min",
@@ -60,7 +62,7 @@ class BaostockCollectorHS3005min(BaseCollector):
             using for debug, by default None
         """
         bs.login()
-        super(BaostockCollectorHS3005min, self).__init__(
+        super(BaostockCollector, self).__init__(
             save_dir=save_dir,
             start=start,
             end=end,
@@ -91,19 +93,6 @@ class BaostockCollectorHS3005min(BaseCollector):
         if interval == "5min":
             return {"interval": "5", "fields": "date,time,code,open,high,low,close,volume,amount,adjustflag"}
 
-    def get_data(
-        self, symbol: str, interval: str, start_datetime: pd.Timestamp, end_datetime: pd.Timestamp
-    ) -> pd.DataFrame:
-        df = self.get_data_from_remote(
-            symbol=symbol, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime
-        )
-        df.columns = ["date", "time", "symbol", "open", "high", "low", "close", "volume", "amount", "adjustflag"]
-        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S%f")
-        df["date"] = df["time"].dt.strftime("%Y-%m-%d %H:%M:%S")
-        df["date"] = df["date"].map(lambda x: pd.Timestamp(x) - pd.Timedelta(minutes=5))
-        df.drop(["time"], axis=1, inplace=True)
-        df["symbol"] = df["symbol"].map(lambda x: str(x).replace(".", "").upper())
-        return df
 
     @staticmethod
     def get_data_from_remote(
@@ -112,10 +101,10 @@ class BaostockCollectorHS3005min(BaseCollector):
         df = pd.DataFrame()
         rs = bs.query_history_k_data_plus(
             symbol,
-            BaostockCollectorHS3005min.process_interval(interval=interval)["fields"],
+            BaostockCollector.process_interval(interval=interval)["fields"],
             start_date=str(start_datetime.strftime("%Y-%m-%d")),
             end_date=str(end_datetime.strftime("%Y-%m-%d")),
-            frequency=BaostockCollectorHS3005min.process_interval(interval=interval)["interval"],
+            frequency=BaostockCollector.process_interval(interval=interval)["interval"],
             adjustflag="3",
         )
         if rs.error_code == "0" and len(rs.data) > 0:
@@ -123,6 +112,58 @@ class BaostockCollectorHS3005min(BaseCollector):
             columns = rs.fields
             df = pd.DataFrame(data_list, columns=columns)
         return df
+
+
+    def normalize_symbol(self, symbol: str):
+        return str(symbol).replace(".", "").upper()
+    
+class BaostockCollectorHS300(BaostockCollector, abc.ABC):
+    def __init__(
+        self,
+        save_dir: Union[str, Path],
+        start=None,
+        end=None,
+        interval="5min",
+        max_workers=4,
+        max_collector_count=2,
+        delay=0,
+        check_data_length: int = None,
+        limit_nums: int = None,
+    ):
+        """
+
+        Parameters
+        ----------
+        save_dir: str
+            stock save dir
+        max_workers: int
+            workers, default 4
+        max_collector_count: int
+            default 2
+        delay: float
+            time.sleep(delay), default 0
+        interval: str
+            freq, value from [5min], default 5min
+        start: str
+            start datetime, default None
+        end: str
+            end datetime, default None
+        check_data_length: int
+            check data length, by default None
+        limit_nums: int
+            using for debug, by default None
+        """
+        super(BaostockCollectorHS300, self).__init__(
+            save_dir=save_dir,
+            start=start,
+            end=end,
+            interval=interval,
+            max_workers=max_workers,
+            max_collector_count=max_collector_count,
+            delay=delay,
+            check_data_length=check_data_length,
+            limit_nums=limit_nums,
+        )
 
     def get_hs300_symbols(self) -> List[str]:
         hs300_stocks = []
@@ -141,8 +182,70 @@ class BaostockCollectorHS3005min(BaseCollector):
         logger.info(f"get {len(symbols)} symbols.")
         return symbols
 
-    def normalize_symbol(self, symbol: str):
-        return str(symbol).replace(".", "").upper()
+    
+
+class BaostockCollectorHS3005min(BaostockCollectorHS300):
+    def __init__(
+        self,
+        save_dir: Union[str, Path],
+        start=None,
+        end=None,
+        interval="5min",
+        max_workers=4,
+        max_collector_count=2,
+        delay=0,
+        check_data_length: int = None,
+        limit_nums: int = None,
+    ):
+        """
+
+        Parameters
+        ----------
+        save_dir: str
+            stock save dir
+        max_workers: int
+            workers, default 4
+        max_collector_count: int
+            default 2
+        delay: float
+            time.sleep(delay), default 0
+        interval: str
+            freq, value from [5min], default 5min
+        start: str
+            start datetime, default None
+        end: str
+            end datetime, default None
+        check_data_length: int
+            check data length, by default None
+        limit_nums: int
+            using for debug, by default None
+        """
+        super(BaostockCollectorHS3005min, self).__init__(
+            save_dir=save_dir,
+            start=start,
+            end=end,
+            interval=interval,
+            max_workers=max_workers,
+            max_collector_count=max_collector_count,
+            delay=delay,
+            check_data_length=check_data_length,
+            limit_nums=limit_nums,
+        )
+
+    def get_data(
+        self, symbol: str, interval: str, start_datetime: pd.Timestamp, end_datetime: pd.Timestamp
+    ) -> pd.DataFrame:
+        df = self.get_data_from_remote(
+            symbol=symbol, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime
+        )
+        df.columns = ["date", "time", "symbol", "open", "high", "low", "close", "volume", "amount", "adjustflag"]
+        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S%f")
+        df["date"] = df["time"].dt.strftime("%Y-%m-%d %H:%M:%S")
+        df["date"] = df["date"].map(lambda x: pd.Timestamp(x) - pd.Timedelta(minutes=5))
+        df.drop(["time"], axis=1, inplace=True)
+        df["symbol"] = df["symbol"].map(lambda x: str(x).replace(".", "").upper())
+        return df
+
 
 
 class BaostockNormalizeHS3005min(BaseNormalize):
@@ -151,7 +254,7 @@ class BaostockNormalizeHS3005min(BaseNormalize):
     PM_RANGE = ("13:00:00", "14:59:00")
 
     def __init__(
-        self, qlib_data_1d_dir: [str, Path], date_field_name: str = "date", symbol_field_name: str = "symbol", **kwargs
+        self, qlib_data_1d_dir: Union[str, Path], date_field_name: str = "date", symbol_field_name: str = "symbol", **kwargs
     ):
         """
 

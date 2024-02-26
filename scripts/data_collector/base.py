@@ -21,7 +21,7 @@ class BaseCollector(abc.ABC):
     CACHE_FLAG = "CACHED"
     NORMAL_FLAG = "NORMAL"
 
-    DEFAULT_START_DATETIME_1D = pd.Timestamp("2000-01-01")
+    DEFAULT_START_DATETIME_1D = pd.Timestamp("2018-01-01")
     DEFAULT_START_DATETIME_1MIN = pd.Timestamp(datetime.datetime.now() - pd.Timedelta(days=5 * 6 - 1)).date()
     DEFAULT_START_DATETIME_5MIN = pd.Timestamp(datetime.datetime.now() - pd.Timedelta(weeks=30)).date()
     
@@ -188,7 +188,7 @@ class BaseCollector(abc.ABC):
 
     def _collector(self, instrument_list):
         error_symbol = []
-        res = Parallel(n_jobs=self.max_workers)(
+        res = Parallel(n_jobs=self.max_workers, backend="multiprocessing")(
             delayed(self._simple_collector)(_inst) for _inst in tqdm(instrument_list)
         )
         for _symbol, _result in zip(instrument_list, res):
@@ -233,17 +233,12 @@ class BaseNormalize(abc.ABC):
         self._date_field_name = date_field_name
         self._symbol_field_name = symbol_field_name
         self.kwargs = kwargs
-        self._calendar_list = self._get_calendar_list()
 
     @abc.abstractmethod
     def normalize(self, df: pd.DataFrame) -> pd.DataFrame:
         # normalize
         raise NotImplementedError("")
 
-    @abc.abstractmethod
-    def _get_calendar_list(self) -> Iterable[pd.Timestamp]:
-        """Get benchmark calendar"""
-        raise NotImplementedError("")
 
 
 class Normalize:

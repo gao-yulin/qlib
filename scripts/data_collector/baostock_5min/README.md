@@ -32,7 +32,7 @@
      - examples:
           ```bash
           # cn 5min data
-          python collector.py download_data --source_dir ~/.qlib/stock_data/source/hs300_5min_original --start 2022-01-01 --end 2022-01-30 --interval 5min --region HS300
+          python collector.py download_data --source_dir ~/qlib/data/source/cn_data --start 2023-01-01 --interval 1d --region HS300
           ```
   2. normalize data: `python scripts/data_collector/baostock_5min/collector.py normalize_data`
      
@@ -57,7 +57,7 @@
       - examples:
         ```bash
         # normalize 5min cn
-        python collector.py normalize_data --qlib_data_1d_dir ~/.qlib/qlib_data/cn_data --source_dir ~/.qlib/stock_data/source/hs300_5min_original --normalize_dir ~/.qlib/stock_data/source/hs300_5min_nor --region HS300 --interval 5min
+        python collector.py normalize_data --source_dir ~/qlib/data/source/cn_data --normalize_dir ~/qlib/data/source/cn_1d_norm
         ```
   3. dump data: `python scripts/dump_bin.py dump_all`
     
@@ -77,5 +77,5 @@
      - examples:
        ```bash
        # dump 5min cn
-       python dump_bin.py dump_all --csv_path ~/.qlib/stock_data/source/hs300_5min_nor --qlib_dir ~/.qlib/qlib_data/hs300_5min_bin --freq 5min --exclude_fields date,symbol
+       python dump_bin.py dump_all --csv_path ~/qlib/data/source/cn_1d_norm --qlib_dir ~/qlib/data/cn_data --freq 1d --exclude_fields date,symbol
        ```
